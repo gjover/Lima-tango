@@ -257,6 +257,26 @@ class Pilatus(PyTango.Device_4Impl):
         communication.set_nb_exposure_per_frame(nb_frames)
 
 
+#----------------------------------------------------------------------------
+#     Read nb exposure per frame attribute
+#----------------------------------------------------------------------------
+    def read_nb_first_image(self,attr) :
+        communication = _PilatusIterface.communication()
+        first = communication.getFirstImgNumber()
+        attr.set_value(first)
+
+#----------------------------------------------------------------------------
+#     Write nb exposure per frame attribute
+#----------------------------------------------------------------------------
+    def write_nb_first_image(self,attr) :
+        data = []
+        attr.get_write_value(data)
+        first = data[0]
+        
+        communication = _PilatusIterface.communication()
+        communication.setFirstImgNumber(first)
+
+
 
 #------------------------------------------------------------------
 #    Read gapfill attribute
@@ -337,6 +357,10 @@ class PilatusClass(PyTango.DeviceClass):
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
         'nb_exposure_per_frame':
+            [[PyTango.DevLong,
+            PyTango.SCALAR,
+            PyTango.READ_WRITE]],
+        'nb_first_image':
             [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
