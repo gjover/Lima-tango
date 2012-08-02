@@ -21,41 +21,35 @@
 ############################################################################
 #=============================================================================
 #
-# file :        Xpad.py
+# file :        XPad.py
 #
-# description : Python source for the Xpad and its commands.
-#                The class is derived from Device. It represents the
-#                CORBA servant object which will be accessed from the
-#                network. All commands which can be executed on the
-#                Pilatus are implemented in this file.
+# description : Python source of the device server for XPad specific
+#               functionalities.  The class is derived from Pytango device
+#               as the XPad class is derived from Pythango device class.
 #
 # project :     TANGO Device Server
 #
-# copyleft :    European Synchrotron Radiation Facility
-#               BP 220, Grenoble 38043
-#               FRANCE
+# copyleft :    CELLS, Sincrotron ALBA
+#               08290 Cerdanyola del Valles
+#               SPAIN
 #
 #=============================================================================
-#         (c) - Bliss - ESRF
-#=============================================================================
-#
+
 import PyTango
 from Lima import Core
-from Lima import Xpad as XpadAcq
-from LimaCCDs import CallableReadEnum,CallableWriteEnum
+from Lima import XPad
 
-
-class Xpad(PyTango.Device_4Impl):
-
+#==================================================================
+# XPad class definition
+#==================================================================
+class XPad(PyTango.Device_4Impl):
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
-
 
 #------------------------------------------------------------------
 #    Device constructor
 #------------------------------------------------------------------
-    def __init__(self,*args) :
-        PyTango.Device_4Impl.__init__(self,*args)
-
+    def __init__(self,cl, name):
+        PyTango.Device_4Impl.__init__(self,cl,name)
         self.init_device()
 
 #------------------------------------------------------------------
@@ -67,75 +61,107 @@ class Xpad(PyTango.Device_4Impl):
 #------------------------------------------------------------------
 #    Device initialization
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
     def init_device(self):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
 
+#------------------------------------------------------------------
+#    LoadConfiguration command
+#------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
-    def getAttrStringValueList(self, attr_name):
-        valueList=[]
-        dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
-        d = getattr(self,dict_name,None)
-        if d:
-            valueList = d.keys()
+    def loadConfiguration(self,filearr):
+         _XPadInterface.loadConfig(filearr[0],filearr[1])
 
-        return valueList
+#------------------------------------------------------------------
+#    Attrubute read/write methods
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def read_config_id(self, attr):
+        Id = _XPadInterface.getConfigId()
+        attr.set_value(Id)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def write_config_id(self, attr):
+        data = []
+        attr.get_write_value(data)
+        Id = data[0]
+        _XPadInterface.setConfigId(Id)
+    
+#     @Core.DEB_MEMBER_FUNCT
+#     def read_conf_file1(self, attr):
+#         self.__calfile1, self.__calfile2 = _XPadInterface.getCalFiles()
+#         attr.set_value(self.__calfile1)
+    
+#     @Core.DEB_MEMBER_FUNCT
+#     def write_conf_file1(self, attr):
+#         data = []
+#         attr.get_write_value(data)
+#         self.__calfile1 = data[0]
+#         _XPadInterface.setCalFiles(self.__calfile1, self.__calfile2)
+    
+#     @Core.DEB_MEMBER_FUNCT
+#     def read_conf_file2(self, attr):
+#         self.__calfile1, self.__calfile2 = _XPadInterface.getCalFiles()
+#         attr.set_value(self.__calfile2)
+    
+#     @Core.DEB_MEMBER_FUNCT
+#     def write_conf_file2(self, attr):
+#         data = []
+#         attr.get_write_value(data)
+#         self.__calfile2 = data[0]
+#        _XPadInterface.setCalFiles(self.__calfile1, self.__calfile2)
+    
+#==================================================================
+# XPadClass class definition
+#==================================================================
 
-    def __getattr__(self,name) :
-        if name.startswith('read_') or name.startswith('write_') :
-            split_name = name.split('_')[1:]
-            attr_name = ''.join([x.title() for x in split_name])
-            dict_name = '_' + self.__class__.__name__ + '__' + attr_name
-            d = getattr(self,dict_name,None)
-            attr_name = self.__Attribute2FunctionBase.get('_'.join(split_name),attr_name)
-            if d:
-                if name.startswith('read_') :
-                    functionName = 'get' + attr_name
-                    function2Call = getattr(_XpadAcq,functionName)
-                    callable_obj = CallableReadEnum(d,function2Call)
-                else:
-                    functionName = 'set' + attr_name
-                    function2Call = getattr(_XpadAcq,function2Call)
-                    callable_obj = CallableWriteEnum(d,function2Call)
-                self.__dict__[name] = callable_obj
-                return callable_obj
-        raise AttributeError('Xpad has no attribute %s' % name)
+class XPadClass(PyTango.DeviceClass):
+
+    #    Class Properties
+    class_property_list = {
+        }
 
 
-class XpadClass(PyTango.DeviceClass):
-
-    class_property_list = {}
-
+    #    Device Properties
     device_property_list = {
         }
 
+
+    #    Command definitions    
     cmd_list = {
-        'getAttrStringValueList':
-        [[PyTango.DevString, "Attribute name"],
-         [PyTango.DevVarStringArray, "Authorized String value list"]],
+        'loadConfiguration':
+        [[PyTango.DevVarStringArray, "Calibration files"],
+         [PyTango.DevVoid, ""]]
         }
 
+
+    #    Attribute definitions
     attr_list = {
+        'config_id':
+            [[PyTango.DevLong,
+            PyTango.SCALAR,
+            PyTango.READ_WRITE]],
         }
 
-    def __init__(self,name) :
-        PyTango.DeviceClass.__init__(self,name)
-        self.set_type(name)
 
-#----------------------------------------------------------------------------
+#==================================================================
 # Plugins
-#----------------------------------------------------------------------------
-_XpadCam = None
-_XpadInterface = None
+#==================================================================
+from Lima.XPad.Interface import Interface
+
+_XPadInterface = None
 
 def get_control(**keys) :
-    global _XpadCam
-    global _XpadInterface
-    if _XpadCam is None:
-	_XpadCam = XpadAcq.Camera()
-	_XpadInterface = XpadAcq.Interface(_XpadCam)
-    return Core.CtControl(_XpadInterface)
+    global _XPadInterface
+    if _XPadInterface is None:
+        _XPadInterface = Interface()
+    return Core.CtControl(_XPadInterface)
 
-def get_tango_specific_class_n_device():
-    return XpadClass,Xpad
+def close_interface() :
+    global _XPadInterface
+    if _XPadInterface is not None:
+        del _XPadInterface
+
+def get_tango_specific_class_n_device() :
+    return XPadClass,XPad
+

@@ -107,6 +107,37 @@ class Pilatus(PyTango.Device_4Impl):
         if d:
             valueList = d.keys()
         return valueList
+
+#------------------------------------------------------------------
+#    sendCamserverCmd:
+#
+#    Description: sends any camserver command.
+#
+#    We need at least the mxsettings command to prepare the camserver:
+#    Description: sets the mxsettings. Documentation from camserver:
+#    Set crystallographic parameters reported in the image header.
+#
+#    mxsettings [param_name value] [param_name value] ...
+#
+#    List of availables param_name :
+#    Wavelength, Energy_range, Detector_distance, Detector_Voffset, Beam_xy,
+#    Beam_x, Beam_y, Flux, Filter_transmission, Start_angle, Angle_increment,
+#    Detector_2theta, Polarization, Alpha, Kappa, Phi, Phi_increment, Chi,
+#    Chi_increment, Oscillation_axis, N_oscillations, Start_position,
+#    Position_increment, Shutter_time, CBF_template_file
+#
+#    Not settable with mxsettings, but provided to templates from detector
+#    settings:
+#    Timestamp, Exposure_period, Exposure_time, Count_cutoff,
+#    Compression_type, X_dimension, Y_dimension
+#
+#    argin: DevString
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def sendCamserverCmd(self, cmd):
+        communication = _PilatusIterface.communication()
+        communication.send_CamserverCmd(cmd)
+
 #==================================================================
 #
 #    Pilatus read/write attribute methods
@@ -277,7 +308,10 @@ class PilatusClass(PyTango.DeviceClass):
         'getAttrStringValueList':
         [[PyTango.DevString, "Attribute name"],
          [PyTango.DevVarStringArray, "Authorized String value list"]],
-        }
+        'sendCamserverCmd':
+        [[PyTango.DevString, "Camserver command to send"],
+         [PyTango.DevVoid, "No answer"]],
+         }
 
 
     #    Attribute definitions
@@ -341,7 +375,9 @@ def get_control(**keys) :
     global _PilatusIterface
     if _PilatusIterface is None:
         _PilatusIterface = Interface.Interface()
-    return Core.CtControl(_PilatusIterface)
+    ct = Core.CtControl(_PilatusIterface)
+    _PilatusIterface.setCtSavingLink(ct.saving())
+    return ct
 
 def close_interface() :
     global _PilatusIterface
