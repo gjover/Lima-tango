@@ -128,7 +128,7 @@ CtControl* ControlFactory::get_control( const string& detector_type)
           db_data[2] >> img_path;
   
           my_camera_marccd           = new Marccd::Camera(camera_ip.c_str(), camera_port, img_path);
-          my_camera_marccd->go(2000);        
+          //my_camera_marccd->go(2000);        
           my_interface_marccd        = new Marccd::Interface(*my_camera_marccd);
           my_control                 = new CtControl(my_interface_marccd);
           ControlFactory::is_created = true;

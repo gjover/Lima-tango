@@ -11,7 +11,6 @@
 
 #include <tango.h>
 
-#include <tango.h>
 
 #ifdef SIMULATOR_ENABLED
 #include <SimulatorInterface.h>
@@ -45,6 +44,7 @@
     #include <ProsilicaVideoCtrlObj.h>
     #include <ProsilicaSyncCtrlObj.h>   
 #endif
+
 using namespace lima;
 using namespace std;
 using namespace Tango;
