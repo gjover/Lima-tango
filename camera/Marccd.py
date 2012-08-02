@@ -60,6 +60,14 @@ class LimaMarccd(PyTango.Device_4Impl):
 #------------------------------------------------------------------
 #   
 #------------------------------------------------------------------
+#     @Core.DEB_MEMBER_FUNCT
+#     def getHeader(self, i):
+#         value = _MarccdInterface.getHeader()
+#         return str(type(value))
+    
+#------------------------------------------------------------------
+#   
+#------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getCamState(self):
         return _MarccdInterface.getCamState()
@@ -81,9 +89,165 @@ class LimaMarccd(PyTango.Device_4Impl):
 #     def write_binning(self, attr):
 #         data = []
 #         attr.get_write_value(data)
+#         if (data[0] == 1):
+#             data[0] = 2;
 #         Id = data[0]
 #         _MarccdInterface.setBinning(Id)
     
+    @Core.DEB_MEMBER_FUNCT
+    def write_source_beam_x(self, attr):
+        data = []
+        attr.get_write_value(data)
+        X = data[0]
+        _MarccdInterface.setBeamX(X)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def write_source_beam_y(self, attr):
+        data = []
+        attr.get_write_value(data)
+        Y = data[0]
+        _MarccdInterface.setBeamY(Y)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def write_source_distance(self, attr):
+        data = []
+        attr.get_write_value(data)
+        D = data[0]
+        _MarccdInterface.setDistance(D)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def write_source_wavelength(self, attr):
+        data = []
+        attr.get_write_value(data)
+        W = data[0]
+        _MarccdInterface.setWavelength(W)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_beam_x(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["beam_x"]/1000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_beam_y(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["beam_y"]/1000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_distance(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["distance"]/1000.0
+        attr.set_value(val)
+    
+    def read_header_pixelsize_x(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["pixelsize_x"]/1000.0
+        attr.set_value(val)
+    
+    def read_header_pixelsize_y(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["pixelsize_y"]/1000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_integration_time(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["integration_time"]/1000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_exposure_time(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["exposure_time"]/1000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_readout_time(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["readout_time"]/1000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_wavelength(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["source_wavelength"]/100000.0
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_acquire_timestamp(self, attr):
+        header = _MarccdInterface.getHeader()
+        str = header["acquire_timestamp"]
+        val = "%s/%s/%s %s:%s:%s" % (str[2:4],str[0:2],str[8:12],str[4:6],str[6:8],str[13:15])
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_header_timestamp(self, attr):
+        header = _MarccdInterface.getHeader()
+        str = header["header_timestamp"]
+        val = "%s/%s/%s %s:%s:%s" % (str[2:4],str[0:2],str[8:12],str[4:6],str[6:8],str[13:15])
+        attr.set_value(val)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_save_timestamp(self, attr):
+        header = _MarccdInterface.getHeader()
+        str = header["save_timestamp"]
+        val = "%s/%s/%s %s:%s:%s" % (str[2:4],str[0:2],str[8:12],str[4:6],str[6:8],str[13:15])
+        attr.set_value(val)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_mean_bias(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["mean_bias"]/1000.0
+        attr.set_value(val)
+        
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_photons_per_100adu(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["photons_per_100adu"]
+        attr.set_value(val)
+        
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_mean(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["mean"]
+        attr.set_value(val)
+        
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_rms(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = header["rms"]
+        attr.set_value(val)
+        
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_temperature(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = [header["temperature_0"]/1000.0,
+               header["temperature_1"]/1000.0,
+               header["temperature_2"]/1000.0,
+               header["temperature_3"]/1000.0,
+               header["temperature_4"]/1000.0,
+               header["temperature_5"]/1000.0,
+               header["temperature_6"]/1000.0,
+               header["temperature_7"]/1000.0,
+               header["temperature_8"]/1000.0]
+        attr.set_value(val)
+        
+    @Core.DEB_MEMBER_FUNCT
+    def read_header_pressure(self, attr):
+        header = _MarccdInterface.getHeader()
+        val = [header["pressure_0"]/1000000.0,
+               header["pressure_1"]/1000000.0,
+               header["pressure_2"]/1000000.0,
+               header["pressure_3"]/1000000.0,
+               header["pressure_4"]/1000000.0,
+               header["pressure_5"]/1000000.0,
+               header["pressure_6"]/1000000.0,
+               header["pressure_7"]/1000000.0,
+               header["pressure_8"]/1000000.0]
+        attr.set_value(val)
+        
+
 #     @Core.DEB_MEMBER_FUNCT
 #     def read_conf_file1(self, attr):
 #         self.__calfile1, self.__calfile2 = _MarccdInterface.getCalFiles()
@@ -129,19 +293,110 @@ class LimaMarccdClass(PyTango.DeviceClass):
         'takeBackgroundFrame':
         [[PyTango.DevVoid, ""],
          [PyTango.DevVoid, ""]],
+#         'getHeader':
+#         [[PyTango.DevLong, ""],
+#          [PyTango.DevString, ""]],
         }
 
 
     #    Attribute definitions
     attr_list = {
         'cam_state':
-            [[PyTango.DevUShort,
+            [[PyTango.DevULong,
               PyTango.SCALAR,
               PyTango.READ]],
-#         'binning':
-#             [[PyTango.DevUShort,
-#               PyTango.SCALAR,
-#               PyTango.READ_WRITE]],
+#          'binning':
+#              [[PyTango.DevUShort,
+#                PyTango.SCALAR,
+#                PyTango.WRITE]],
+         'source_beam_x':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.WRITE]],
+         'source_beam_y':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.WRITE]],
+         'source_distance':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.WRITE]],
+         'source_wavelength':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.WRITE]],
+         'header_beam_x':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_beam_y':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_distance':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_pixelsize_x':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_pixelsize_y':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_integration_time':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_exposure_time':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_readout_time':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_wavelength':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_acquire_timestamp':
+             [[PyTango.DevString,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_header_timestamp':
+             [[PyTango.DevString,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_save_timestamp':
+             [[PyTango.DevString,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_mean_bias':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_photons_per_100adu':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_mean':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_rms':
+             [[PyTango.DevFloat,
+               PyTango.SCALAR,
+               PyTango.READ]],
+         'header_temperature':
+             [[PyTango.DevFloat,
+               PyTango.SPECTRUM,
+               PyTango.READ,9]],
+         'header_pressure':
+             [[PyTango.DevFloat,
+               PyTango.SPECTRUM,
+               PyTango.READ,9]],
         }
 
 #----------------------------------------------------------------------------
