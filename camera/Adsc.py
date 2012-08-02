@@ -19,11 +19,79 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
-#----------------------------------------------------------------------------
-# Plugins
-#----------------------------------------------------------------------------
+
+import PyTango
 from Lima import Core
 from Lima import Adsc
+
+#==================================================================
+# Adsc class definition
+#==================================================================
+class Adsc(PyTango.Device_4Impl):
+    Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
+
+#------------------------------------------------------------------
+#    Device constructor
+#------------------------------------------------------------------
+    def __init__(self,cl, name):
+        PyTango.Device_4Impl.__init__(self,cl,name)
+        self.init_device()
+
+#------------------------------------------------------------------
+#    Device destructor
+#------------------------------------------------------------------
+    def delete_device(self):
+        pass
+
+#------------------------------------------------------------------
+#    Device initialization
+#------------------------------------------------------------------
+    def init_device(self):
+        self.set_state(PyTango.DevState.ON)
+        self.get_device_properties(self.get_device_class())
+
+#------------------------------------------------------------------
+#    LoadConfiguration command
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def takeDarks(self,Texp):
+         _AdscInterface.takeDarks(Texp)
+
+#------------------------------------------------------------------
+#    Attrubute read/write methods
+#------------------------------------------------------------------
+    
+#==================================================================
+# AdscClass class definition
+#==================================================================
+
+class AdscClass(PyTango.DeviceClass):
+
+    #    Class Properties
+    class_property_list = {
+        }
+
+
+    #    Device Properties
+    device_property_list = {
+        }
+
+
+    #    Command definitions    
+    cmd_list = {
+        'takeDarks':
+        [[PyTango.DevFloat, "Exposure time"],
+         [PyTango.DevVoid, ""]]
+        }
+
+
+    #    Attribute definitions
+    attr_list = {
+        }
+
+#==================================================================
+# Plugins
+#==================================================================
 from Lima.Adsc.Interface import Interface
 
 _AdscInterface = None
@@ -40,4 +108,6 @@ def close_interface() :
     if _AdscInterface is not None:
         del _AdscInterface
 
+def get_tango_specific_class_n_device() :
+    return AdscClass,Adsc
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-LIMA_BASE_SERVER_PATH=/home/opbl13/lima_installed_locally/Lima/applications/tango/
+# export LIMA_BASE_SERVER_PATH=/homelocal/sicilia/bin/
 
 cd $LIMA_BASE_SERVER_PATH
 exec python LimaCCDs.py $* 
