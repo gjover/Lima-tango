@@ -23,7 +23,9 @@
 #=============================================================================
 #
 
-CLASS      = PilatusPixelDetector
+CLASS      = SimulatorCCD
+CLASS_FLAGS = -llimasimulator
+ENABLEDCAM = -DSIMULATOR_ENABLED -DWITH_SPS_IMAGE
 MAJOR_VERS = 1
 MINOR_VERS = 0
 RELEASE    = Release_$(MAJOR_VERS)_$(MINOR_VERS)
@@ -31,9 +33,15 @@ RELEASE    = Release_$(MAJOR_VERS)_$(MINOR_VERS)
 #-----------------------------------------
 #	Set default home directories
 #-----------------------------------------
+# Needs environment variables :
+# TANGO_HOME
+# YAT4TANGO_HOME
+#-----------------------------------------
 
-TANGO_HOME   =  @prefix@
 CPP_SERVERS  =  $(TANGO_HOME)/cppserver
+ORB_PREFIX   =  $(TANGO_HOME)
+LIMA_HOME    =  ../../../../install/Lima
+YAT_HOME     =  ../../../../third-party/yat
 
 ifdef no_debug
 	DEBUG = -O
@@ -59,14 +67,20 @@ SL_EXT = so
 VERS_OPT = -Wl,-soname,
 endif
 
-INCLUDE_DIRS =  -I$(TANGO_HOME)/include \
-					 -I@ORB_PREFIX@/include \
-					 -I.	\
-                -I$(CPP_SERVERS)/include
+INCLUDE_DIRS =   -I$(TANGO_HOME)/include \
+		 -I$(ORB_PREFIX)/include \
+                 -I$(CPP_SERVERS)/include \
+                 -I$(LIMA_HOME)/include \
+                 -I$(YAT_HOME)/include \
+                 -I$(YAT4TANGO_HOME)/include \
+		 -I.	
 
 OBJS_DIR    = obj
-LIB_DIRS    = -L $(TANGO_HOME)/lib \
-				  -L @ORB_PREFIX@/lib
+LIB_DIRS    =   -L $(TANGO_HOME)/lib \
+		-L $(ORB_PREFIX)/lib \
+		-L $(LIMA_HOME)/Lib \
+		-L $(YAT_HOME)/src/.libs \
+		-L $(YAT4TANGO_HOME)/lib
 
 TARGET_LIB = $(CPP_SERVERS)/lib/libtgclasses.a
 
@@ -88,13 +102,15 @@ LFLAGS =  $(DEBUG) $(LIB_DIRS)  		\
 endif
 
 ifdef linux
-CXXFLAGS =  $(DEBUG) -D_REENTRANT $(INCLUDE_DIRS)
-LFLAGS =  $(DEBUG) $(LIB_DIRS)  		\
+CXXFLAGS =  $(DEBUG) -D_REENTRANT $(ENABLEDCAM) $(INCLUDE_DIRS)
+LFLAGS =  $(DEBUG) $(LIB_DIRS) $(CLASS_FLAGS) 		\
 				-ltango			\
 				-llog4tango		\
+				-llimacore -l:libprocesslib.so  \
 				-lomniORB4 		\
 				-lomniDynamic4	\
 				-lomnithread	\
+				-lyat -lyat4tango	\
 				-lCOS4			\
 				-ldl -lpthread
 endif
@@ -108,6 +124,8 @@ endif
 
 SVC_OBJS = $(OBJS_DIR)/main.o	\
 		$(OBJS_DIR)/ClassFactory.o	\
+		$(OBJS_DIR)/Factory.o	\
+		$(OBJS_DIR)/AcquisitionTask.o	\
 		$(OBJS_DIR)/$(CLASS)Class.o	\
 		$(OBJS_DIR)/$(CLASS)StateMachine.o	\
 		$(OBJS_DIR)/$(CLASS).o
@@ -116,6 +134,9 @@ SHLIB_OBJS = $(OBJS_DIR)/$(CLASS)Class.so.o	\
 		$(OBJS_DIR)/$(CLASS)StateMachine.so.o	\
 		$(OBJS_DIR)/$(CLASS).so.o
 
+LIMADET_OBJS =  $(OBJS_DIR)/LimaDetectorClass.o	\
+		$(OBJS_DIR)/LimaDetectorStateMachine.o	\
+		$(OBJS_DIR)/LimaDetector.o	
 
 SVC_INC = $(CLASS)Class.h \
 		$(CLASS).h
@@ -131,11 +152,15 @@ $(OBJS_DIR)/%.so.o: %.cpp $(SVC_INC)
 #-----------------------------------------
 #	 Make Entry
 #-----------------------------------------
-all: $(CLASS)
+all: $(CLASS) 
 	
-$(CLASS):	make_obj_dir make_bin_dir $(SVC_OBJS)
-	$(CC) $(SVC_OBJS) -o $(CLASS) $(LFLAGS)
-	@mv $(CLASS) bin/$(CLASS)
+$(CLASS): 	make_obj_dir make_bin_dir $(SVC_OBJS) $(LIMADET_OBJS) 
+	$(CC) $(SVC_OBJS) $(LIMADET_OBJS) -o $@ $(LFLAGS)
+	@mv $@ bin/$@
+
+LimaDetector:	make_obj_dir make_bin_dir $(SVC_OBJS) $(LIMADET_OBJS) 
+	$(CC) $(SVC_OBJS) $(LIMADET_OBJS) -o $@ $(LFLAGS)
+	@mv $@ bin/$@
 
 shlib:	make_obj_dir make_shlib_dir $(SHLIB_OBJS)
 	$(AR_SL) -o \

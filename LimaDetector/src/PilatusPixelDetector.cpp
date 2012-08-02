@@ -260,25 +260,35 @@ void PilatusPixelDetector::get_device_property()
 //-----------------------------------------------------------------------------
 void PilatusPixelDetector::always_executed_hook()
 {
-    try
-    {
-    	//- get the singleton control objet used to pilot the lima framework
-        m_ct = ControlFactory::instance().get_control("PilatusPixelDetector");
+	DEBUG_STREAM << "PilatusPixelDetector::always_executed_hook() entering... "<< endl;
+	try
+	{
+		//- get the singleton control objet used to pilot the lima framework
+		m_ct = ControlFactory::instance().get_control("PilatusPixelDetector");
 
-        //- get interface to specific detector
-        if(m_ct!=0)
-            m_hw = dynamic_cast<Pilatus::Interface*>(m_ct->hwInterface());
+		//- get interface to specific detector
+		if(m_ct!=0)
+			m_hw = dynamic_cast<Pilatus::Interface*>(m_ct->hwInterface());
 
-    }
-    catch(Exception& e)
-    {
-        ERROR_STREAM << e.getErrMsg() << endl;
-        //- throw exception
-        Tango::Except::throw_exception(
-                    static_cast<const char*> ("TANGO_DEVICE_ERROR"),
-                    static_cast<const char*> (e.getErrMsg().c_str()),
-                    static_cast<const char*> ("PilatusPixelDetector::always_executed_hook"));
-    }
+	}
+	catch(Exception& e)
+	{
+		ERROR_STREAM << e.getErrMsg() << endl;
+		m_status_message <<"Initialization Failed : "<<e.getErrMsg( )<< endl;
+		//- throw exception
+		set_state(Tango::INIT);
+		m_is_device_initialized = false;
+		return;
+	}
+	catch(...)
+	{
+		ERROR_STREAM<<"Initialization Failed : UNKNOWN"<<endl;
+		m_status_message <<"Initialization Failed : UNKNOWN"<< endl;
+		//- throw exception
+		set_state(Tango::INIT);
+		m_is_device_initialized = false;
+		return;
+	}
 }
 //+----------------------------------------------------------------------------
 //
@@ -411,6 +421,11 @@ void PilatusPixelDetector::write_imagePath(Tango::WAttribute &attr)
 	DEBUG_STREAM << "PilatusPixelDetector::write_imagePath(Tango::WAttribute &attr) entering... "<< endl;
     try
     {
+	//need to reset the state FAULT in order to avoid a problem on proxima1 datacollector
+	if(dev_state()==Tango::FAULT || dev_state()==Tango::RUNNING)
+	{
+            m_ct->resetStatus(false);          
+	}
         attr.get_write_value(attr_imagePath_write);
         m_hw->setImagePath(attr_imagePath_write);
     }
@@ -886,8 +901,10 @@ Tango::DevState PilatusPixelDetector::dev_state()
     {
             CtControl::Status status;
             m_ct->getStatus(status);
+
             if (status.AcquisitionStatus == lima::AcqReady)
             {
+
                 HwInterface::StatusType state;
                 m_hw->getStatus(state);
 
@@ -919,7 +936,7 @@ Tango::DevState PilatusPixelDetector::dev_state()
             }
             else
             {
-                HwInterface::StatusType state;
+		HwInterface::StatusType state;
                 m_hw->getStatus(state);
                 if(state.acq == AcqFault && state.det == DetFault)
                 {
