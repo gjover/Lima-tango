@@ -196,7 +196,7 @@ class Pilatus(PyTango.Device_4Impl):
         if threshold == None:           # Not set
             energy = -1
         else:
-            energy = threshold / 600.    # threshold is 60% of working energy
+            energy = threshold * 2.    # threshold is 60% of working energy
         attr.set_value(energy)
 
 #------------------------------------------------------------------
@@ -206,18 +206,21 @@ class Pilatus(PyTango.Device_4Impl):
         data = []
         attr.get_write_value(data)
         energy = data[0]
-        threshold = energy * 600  # 60% of working energy
-        if energy > 12 :
-            gain = 0                    # Low gain
-        elif energy > 8 and energy <= 12 :
-            gain = 1                    # Mid gain
-        elif energy >= 6 and energy <= 8:
-            gain = 2                    # high gain
-        else:
-            gain = 3                    # Ultra high gain
-        
         communication = _PilatusIterface.communication()
-        communication.set_threshold_gain(threshold,gain)
+        communication.set_energy(energy)
+
+        # threshold = energy * 600  # 60% of working energy
+        # if energy > 12 :
+        #     gain = 0                    # Low gain
+        # elif energy > 8 and energy <= 12 :
+        #     gain = 1                    # Mid gain
+        # elif energy >= 6 and energy <= 8:
+        #     gain = 2                    # high gain
+        # else:
+        #     gain = 3                    # Ultra high gain
+        
+        # communication = _PilatusIterface.communication()
+        # communication.set_threshold_gain(threshold,gain)
 #----------------------------------------------------------------------------
 #     Read delay attribute
 #----------------------------------------------------------------------------
@@ -297,6 +300,16 @@ class Pilatus(PyTango.Device_4Impl):
         communication = _PilatusIterface.communication()
         communication.set_gapfill(gapfill)
 
+#------------------------------------------------------------------
+#    Read camstatus attribute
+#------------------------------------------------------------------
+    def read_cam_state(self, attr):
+        StateDict = {0:"ERROR",1:"DISCONNECTED",2:"OK",3:"SETTING_THRESHOLD",4:"SETTING_EXPOSURE",5:"SETTING_NB_IMAGE_IN_SEQUENCE",6:"SETTING_EXPOSURE_PERIOD",7:"SETTING_HARDWARE_TRIGGER_DELAY",8:"SETTING_EXPOSURE_PER_FRAME",9:"KILL_ACQUISITION",10:"RUNNING"}
+
+        communication = _PilatusIterface.communication()
+        status = communication.status()
+        attr.set_value(StateDict[status])
+
 #==================================================================
 #
 #    Pilatus command methods
@@ -341,7 +354,7 @@ class PilatusClass(PyTango.DeviceClass):
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
         'threshold':
-            [[PyTango.DevLong,
+            [[PyTango.DevFloat,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
         'energy_threshold':
@@ -364,6 +377,10 @@ class PilatusClass(PyTango.DeviceClass):
             [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
+        'cam_state':
+            [[PyTango.DevString,
+            PyTango.SCALAR,
+            PyTango.READ]],
         }
 
 
