@@ -49,6 +49,13 @@ import itertools
 import numpy
 import struct
 
+
+# Before loading Lima.Core, must find out the version the plug-in
+# was compiled with - horrible hack ...
+if 'linux' in sys.platform:
+    from EnvHelper import setup_lima_env
+    setup_lima_env(sys.argv)
+
 from Lima import Core
 
 import plugins
@@ -229,6 +236,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
 	    self.__AcqTriggerMode['INTERNAL_TRIGGER_MULTI'] = Core.IntTrigMult
 	except AttributeError:
 	    pass
+	try:
+	    self.__AcqTriggerMode['EXTERNAL_TRIGGER_READOUT'] = Core.ExtTrigReadout
+	except AttributeError:
+	    pass
 
         try:
             self.__ImageRotation = {'NONE' : Core.Rotation_0,
@@ -258,6 +269,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
         except AttributeError:
             import traceback
             traceback.print_exc()
+	#INIT display shared memory
+	try:
+	    self.__shared_memory_names = ['LimaCCds',self.LimaCameraType]
+	    shared_memory = self.__control.display()
+	    shared_memory.setNames(*self.__shared_memory_names)
+	except AttributeError:
+	    self.__shared_memory_names = ['','']
+
         
     def __getattr__(self,name) :
         if name.startswith('is_') and name.endswith('_allowed') :
@@ -324,6 +343,15 @@ class LimaCCDs(PyTango.Device_4Impl) :
 	interface = self.__control.hwInterface()
 	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
 	value = det_info.getDetectorModel() 
+	attr.set_value(value)
+        
+    ## @brief Read the Camera pixelsize
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_camera_pixelsize(self,attr) :        
+	interface = self.__control.hwInterface()
+	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+	value = det_info.getPixelSize() 
 	attr.set_value(value)
         
     ## @brief get the status of the acquisition
@@ -715,6 +743,20 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__key_header_delimiter = data[0]
         self.__entry_header_delimiter = data[1]
         self.__image_number_header_delimiter = data[2]
+
+    def read_saving_index_format(self,attr) :
+	saving = self.__control.saving()
+	params = saving.getParameters()
+	attr.set_value(params.indexFormat)
+
+    def write_saving_index_format(self,attr) :
+	data = []
+	attr.get_write_value(data)
+	saving = self.__control.saving()
+	params = saving.getParameters()
+	params.indexFormat = data[0]
+	saving.setParameters(params)
+
     ## @brief last image acquired
     #
     @Core.DEB_MEMBER_FUNCT
@@ -1224,6 +1266,23 @@ class LimaCCDs(PyTango.Device_4Impl) :
             returnList.append(key.lower().replace('deviceserver',''))
             returnList.append(value)
         attr.set_value(returnList)
+
+    def read_shared_memory_names(self,attr) :
+        attr.set_value(self.__shared_memory_names)
+
+    def write_shared_memory_names(self,attr) :
+        self.__shared_memory_names = []
+        attr.get_write_value(self.__shared_memory_names)
+        shared_memory = self.__control.display()
+        shared_memory.setNames(*self.__shared_memory_names)
+
+    def read_shared_memory_active(self,attr):
+        attr.set_value(self.__control.display().isActive())
+
+    def write_shared_memory_active(self,attr):
+        data = []
+        attr.get_write_value(data)
+        self.__control.display().setActive(*data)
 #==================================================================
 #
 #    LimaCCDs command methods
@@ -1509,6 +1568,18 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ]],
+        'camera_pixelsize':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ,2],
+         {
+             'label':"Pixel size:x_size, y_size",
+             'unit':"meter",
+             'standard unit':"meter",
+             'display unit':"meter",
+             'format':"%f",
+             'description':"Size of the pixel in meter",
+         }],
         'acq_status':
         [[PyTango.DevString,
           PyTango.SCALAR,
@@ -1701,6 +1772,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SPECTRUM,
           PyTango.READ_WRITE,3]],
+	'saving_index_format' :
+	[[PyTango.DevString,
+	  PyTango.SCALAR,
+	  PyTango.READ_WRITE]],
         'debug_modules_possible':
          [[PyTango.DevString,
           PyTango.SPECTRUM,
@@ -1793,6 +1868,14 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SPECTRUM,
           PyTango.READ,256]],
+        'shared_memory_names':
+        [[PyTango.DevString,
+          PyTango.SPECTRUM,
+          PyTango.READ_WRITE,2]],
+        'shared_memory_active':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         }
 
 
@@ -1811,12 +1894,17 @@ def declare_camera_n_commun_to_tango_world(util) :
             else:
                 util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
 
+    warningFlag = False
     for module_name in plugins.__all__:
         try:
             m = __import__('plugins.%s' % (module_name),None,None,'plugins.%s' % (module_name))
         except ImportError:
-	    import traceback
-	    traceback.print_exc()
+            print "Warning optional plugin %s can't be load, dependency not satisfied." % module_name
+            warningFlag = True
+            if verboseLevel >= 4:
+                import traceback
+                traceback.print_exc()
+                print
             continue
         else:
             try:
@@ -1826,7 +1914,9 @@ def declare_camera_n_commun_to_tango_world(util) :
             else:
                 specificClass,specificDevice = func()
 		util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
-
+    if warningFlag and verboseLevel < 4:
+        print "For more pulgins dependency  information start server with -v4"
+        
 def export_default_plugins() :
     #Post processing tango export
     util = PyTango.Util.instance()
@@ -1957,6 +2047,13 @@ class CallableWriteEnum:
 #
 #==================================================================
 def main() :
+    global verboseLevel
+    verboseLevel = 0
+    for option in sys.argv:
+        if option.startswith('-v'):
+            try:
+                verboseLevel = int(option[2:])
+            except: pass
     try:
         py = PyTango.Util(sys.argv)
         py.add_TgClass(LimaCCDsClass,LimaCCDs,'LimaCCDs')

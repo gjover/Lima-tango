@@ -240,7 +240,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdWrite(self):
-        pass
+	self.DevCcdWriteFile(-1)
 
 #------------------------------------------------------------------
 #    DevCcdSetExposure command:
@@ -549,15 +549,21 @@ class LimaTacoCCDs(PyTango.Device_4Impl):
     def setLiveDisplay(self, livedisplay_act):
         deb.Param('Setting live display active: %s' % livedisplay_act)
 	control = _control_ref()
-        display = control.display()
-        display.setNames('_ccd_ds_', 'limaccd_live')
-        display.setActive(livedisplay_act)
+	try:
+	    display = control.display()
+	    display.setNames('_ccd_ds_', 'limaccd_live')
+	    display.setActive(livedisplay_act)
+	except AttributeError:
+	    pass
 
     @Core.DEB_MEMBER_FUNCT
     def getLiveDisplay(self):
 	control = _control_ref()
-        display = control.display()
-        livedisplay_act = display.isActive()
+	try:
+	    display = control.display()
+	    livedisplay_act = display.isActive()
+	except AttributeError:
+	    livedisplay_act = False
         deb.Return('Getting live display active: %s' % livedisplay_act)
         return livedisplay_act
 
@@ -569,8 +575,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl):
 #    argin:    DevLong frame to write
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
-    def DevCcdWriteFile(self, argin):
-       pass 
+    def DevCcdWriteFile(self, frame_nb):
+	control = _control_ref()
+        saving = control.saving()
+        saving.writeFrame(frame_nb,1)
 
 #------------------------------------------------------------------
 #    DevCcdGetBin command:
@@ -640,6 +648,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl):
             triggerMode = Core.ExtTrigSingle
         elif argin == 2:
             triggerMode = Core.ExtTrigMult
+        elif argin == 3:
+	    triggerMode = Core.ExtStartStop
+	elif argin == 4:
+	    triggerMode = Core.ExtTrigReadout
         else:
             raise Core.Exception,'Invalid ext. trig: %s' % argin
 
@@ -662,6 +674,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl):
             returnValue = 1
         elif triggerMode == Core.ExtTrigMult:
             returnValue = 2
+	elif triggerMode == Core.ExtStartStop:
+	    returnValue = 3
+	elif triggerMode == Core.ExtTrigReadout:
+	    returnValue = 4
         else:
             raise Core.Exception, 'Invalid trigger mode: %s' % triggerMode
         return returnValue

@@ -43,6 +43,10 @@
 
  //	Add your own constant definitions here.
  //-----------------------------------------------
+#ifdef WIN32
+#include <tango.h>
+#endif
+
 #include "HwInterface.h"
 #include "CtControl.h"
 #include "CtImage.h"
@@ -51,7 +55,9 @@
 #include <MarccdInterface.h>
 #include "Factory.h"
 
+#ifndef WIN32
 #include <tango.h>
+#endif
 
 
 #define MAX_ATTRIBUTE_STRING_LENGTH 	256
@@ -113,6 +119,15 @@ public :
  *	Detector generated image(s) path.
  */
 	string	detectorTargetPath;
+/**
+ *	During acquisition, this is the time before declaring that is no available image returned by detector. (in ms)
+ */
+	Tango::DevUShort	readerTimeout;
+/**
+ *	Enable/Disable using ImageDiffraction to read image file.
+ *	[default = enable]
+ */
+	Tango::DevBoolean	useReader;
 //@}
 
 /**
@@ -233,7 +248,8 @@ public :
 
 	//	Here is the end of the automatic code generation part
 	//-------------------------------------------------------------	
-
+	// return true if the device is correctly initialized in init_device
+	bool is_device_initialized(){return m_is_device_initialized;};
 
 
 protected :	
