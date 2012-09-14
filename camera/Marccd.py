@@ -103,12 +103,22 @@ class LimaMarccd(PyTango.Device_4Impl):
 #         _MarccdInterface.setBinning(Id)
     
     @Core.DEB_MEMBER_FUNCT
+    def read_source_beam_x(self, attr):
+        val = _MarccdInterface.getBeamX()
+        attr.set_value(val)
+
+    @Core.DEB_MEMBER_FUNCT
     def write_source_beam_x(self, attr):
         data = []
         attr.get_write_value(data)
         X = data[0]
         _MarccdInterface.setBeamX(X)
     
+    @Core.DEB_MEMBER_FUNCT
+    def read_source_beam_y(self, attr):
+        val = _MarccdInterface.getBeamY()
+        attr.set_value(val)
+
     @Core.DEB_MEMBER_FUNCT
     def write_source_beam_y(self, attr):
         data = []
@@ -117,12 +127,22 @@ class LimaMarccd(PyTango.Device_4Impl):
         _MarccdInterface.setBeamY(Y)
     
     @Core.DEB_MEMBER_FUNCT
+    def read_source_distance(self, attr):
+        val = _MarccdInterface.getDistance()
+        attr.set_value(val)
+
+    @Core.DEB_MEMBER_FUNCT
     def write_source_distance(self, attr):
         data = []
         attr.get_write_value(data)
         D = data[0]
         _MarccdInterface.setDistance(D)
     
+    @Core.DEB_MEMBER_FUNCT
+    def read_source_wavelength(self, attr):
+        val = _MarccdInterface.getWavelength()
+        attr.set_value(val)
+
     @Core.DEB_MEMBER_FUNCT
     def write_source_wavelength(self, attr):
         data = []
@@ -323,19 +343,19 @@ class LimaMarccdClass(PyTango.DeviceClass):
          'source_beam_x':
              [[PyTango.DevFloat,
                PyTango.SCALAR,
-               PyTango.WRITE]],
+               PyTango.READ_WRITE]],
          'source_beam_y':
              [[PyTango.DevFloat,
                PyTango.SCALAR,
-               PyTango.WRITE]],
+               PyTango.READ_WRITE]],
          'source_distance':
              [[PyTango.DevFloat,
                PyTango.SCALAR,
-               PyTango.WRITE]],
+               PyTango.READ_WRITE]],
          'source_wavelength':
              [[PyTango.DevFloat,
                PyTango.SCALAR,
-               PyTango.WRITE]],
+               PyTango.READ_WRITE]],
          'header_beam_x':
              [[PyTango.DevFloat,
                PyTango.SCALAR,
