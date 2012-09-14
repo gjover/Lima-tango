@@ -60,6 +60,14 @@ class LimaMarccd(PyTango.Device_4Impl):
 #------------------------------------------------------------------
 #   
 #------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def saveBG(self):
+        _MarccdInterface.saveBG()
+        pass
+
+#------------------------------------------------------------------
+#   
+#------------------------------------------------------------------
 #     @Core.DEB_MEMBER_FUNCT
 #     def getHeader(self, i):
 #         value = _MarccdInterface.getHeader()
@@ -291,6 +299,9 @@ class LimaMarccdClass(PyTango.DeviceClass):
     #    Command definitions    
     cmd_list = {
         'takeBackgroundFrame':
+        [[PyTango.DevVoid, ""],
+         [PyTango.DevVoid, ""]],
+        'saveBG':
         [[PyTango.DevVoid, ""],
          [PyTango.DevVoid, ""]],
 #         'getHeader':
