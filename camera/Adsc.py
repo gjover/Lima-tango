@@ -101,7 +101,9 @@ def get_control(**keys) :
     global _AdscInterface
     if _AdscInterface is None:
         _AdscInterface = Interface()
-    return Core.CtControl(_AdscInterface)
+    ct = Core.CtControl(_AdscInterface)
+    _AdscInterface.setCtSavingLink(ct.saving())
+    return ct
 
 def close_interface() :
     global _AdscInterface
