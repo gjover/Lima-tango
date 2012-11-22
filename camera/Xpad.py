@@ -87,6 +87,18 @@ class XPad(PyTango.Device_4Impl):
         Id = data[0]
         _XPadInterface.setConfigId(Id)
     
+    @Core.DEB_MEMBER_FUNCT
+    def read_ITHLoffset(self, attr):
+        th = _XPadInterface.getITHLoffset()
+        attr.set_value(th)
+    
+    @Core.DEB_MEMBER_FUNCT
+    def write_ITHLoffset(self, attr):
+        data = []
+        attr.get_write_value(data)
+        th = data[0]
+        _XPadInterface.getITHLoffset(th)
+    
 #     @Core.DEB_MEMBER_FUNCT
 #     def read_conf_file1(self, attr):
 #         self.__calfile1, self.__calfile2 = _XPadInterface.getCalFiles()
@@ -138,6 +150,10 @@ class XPadClass(PyTango.DeviceClass):
     #    Attribute definitions
     attr_list = {
         'config_id':
+            [[PyTango.DevLong,
+            PyTango.SCALAR,
+            PyTango.READ_WRITE]],
+        'ITHLoffset':
             [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
